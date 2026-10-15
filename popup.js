@@ -155,14 +155,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Mini / Normal Mode Switcher
+  // Mini / Normal Mode Switcher (ONLY for detached desktop window)
   function setMiniMode(mini) {
+    if (!window.location.search.includes("detached=true")) {
+      return;
+    }
+
     isMiniMode = mini;
     document.body.classList.toggle("mini-mode", mini);
     chrome.storage.local.set({ isMiniMode: mini });
 
     // If running in detached popup window, lock to exact fixed dimensions
-    if (window.location.search.includes("detached=true") && chrome.windows && chrome.windows.getCurrent) {
+    if (chrome.windows && chrome.windows.getCurrent) {
       chrome.windows.getCurrent((win) => {
         if (!win) return;
         if (mini) {

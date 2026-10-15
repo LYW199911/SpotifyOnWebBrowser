@@ -27,12 +27,32 @@
 }
 
 body {
-  width: 320px;
+  width: 330px;
+  min-width: 330px;
   background-color: var(--bg-main);
   color: var(--text-base);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   overflow: hidden;
+}
+
+body:not(.detached) {
+  width: 330px !important;
+  min-width: 330px !important;
+  max-width: 330px !important;
+  min-height: 480px !important;
   border-radius: var(--radius-lg);
+}
+
+body:not(.detached) .header {
+  display: flex !important;
+}
+
+body:not(.detached) #full-player-content {
+  display: block !important;
+}
+
+body:not(.detached) #mini-player-strip {
+  display: none !important;
 }
 
 .player-container {
@@ -757,8 +777,6 @@ body.mini-mode {
   padding: 0 !important;
   border-radius: var(--radius-md);
   background: var(--bg-main) !important;
-}
-
 body.detached.mini-mode {
   width: 100vw !important;
   height: 100vh !important;
@@ -774,31 +792,29 @@ body.detached.mini-mode {
   background: var(--bg-main) !important;
 }
 
-body.mini-mode::-webkit-scrollbar,
 body.detached.mini-mode::-webkit-scrollbar,
-body.mini-mode *::-webkit-scrollbar {
+body.detached.mini-mode *::-webkit-scrollbar {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
 }
 
-body.mini-mode .header {
+body.detached.mini-mode .header {
   display: none !important;
 }
 
-body.mini-mode #full-player-content {
+body.detached.mini-mode #full-player-content {
   display: none !important;
 }
 
-body.mini-mode #no-tab-view {
+body.detached.mini-mode #no-tab-view {
   display: none !important;
 }
 
-body.mini-mode #mini-player-strip {
+body.detached.mini-mode #mini-player-strip {
   display: flex !important;
 }
 
-body.mini-mode .player-container,
 body.detached.mini-mode .player-container {
   padding: 0 10px !important;
   margin: 0 !important;
@@ -809,37 +825,5 @@ body.detached.mini-mode .player-container {
   flex-direction: column !important;
   justify-content: center !important;
   overflow: hidden !important;
-}
-
-/* 2. Responsive Fallback when window height < 200px */
-@media (max-height: 200px) {
-  body,
-  body.detached {
-    overflow: hidden !important;
-    overflow-y: hidden !important;
-  }
-  body::-webkit-scrollbar,
-  body *::-webkit-scrollbar {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-  }
-  .header {
-    display: none !important;
-  }
-  #full-player-content {
-    display: none !important;
-  }
-  #mini-player-strip {
-    display: flex !important;
-  }
-  .player-container,
-  body.detached .player-container {
-    padding: 0 10px !important;
-    height: 100vh !important;
-    min-height: 0 !important;
-    justify-content: center !important;
-    overflow: hidden !important;
-  }
 }
 
