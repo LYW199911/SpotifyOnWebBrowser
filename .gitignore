@@ -3,3 +3,6 @@
 Thumbs.db
 *.log
 *.zip
+store_assets/
+convert_promo.ps1
+
