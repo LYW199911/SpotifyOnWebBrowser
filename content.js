@@ -53,10 +53,12 @@
     const playPauseBtn = findEl([
       'button[data-testid="control-button-playpause"]',
       'button[data-testid="play-button"]',
-      'button[aria-label*="Play"]',
-      'button[aria-label*="Pause"]',
+      'button[aria-label*="Play" i]',
+      'button[aria-label*="Pause" i]',
       'button[aria-label*="播放"]',
       'button[aria-label*="暂停"]',
+      'footer [data-testid="control-button-playpause"]',
+      'footer button[data-encore-id="buttonPrimary"]',
     ]);
 
     let isPlaying = false;
@@ -67,10 +69,17 @@
       } else if (label.includes("play") || label.includes("播放")) {
         isPlaying = false;
       } else {
-        // Fallback: check audio element or svg
-        const audio = document.querySelector("audio");
-        if (audio && !audio.paused) {
+        // Fallback: check SVG icon or audio element
+        const path = playPauseBtn.querySelector("path");
+        const pathData = path ? path.getAttribute("d") || "" : "";
+        const hasPauseBars = pathData.includes("M5.7") || pathData.includes("M6") || !!playPauseBtn.querySelector("rect");
+        if (hasPauseBars) {
           isPlaying = true;
+        } else {
+          const audio = document.querySelector("audio");
+          if (audio && !audio.paused && audio.currentTime > 0) {
+            isPlaying = true;
+          }
         }
       }
     }
@@ -152,10 +161,20 @@
       if (audio) volume = Math.round(audio.volume * 100);
     }
 
-    const muteBtn = findEl('button[data-testid="volume-bar-toggle-mute-button"]');
+    const muteBtn = findEl([
+      'button[data-testid="volume-bar-toggle-mute-button"]',
+      'button[aria-label*="Mute" i]',
+      'button[aria-label*="Unmute" i]',
+      'button[aria-label*="静音"]',
+      'button[aria-label*="取消静音"]',
+      '[data-testid="volume-bar"] button',
+      'footer [data-testid="volume-bar-toggle-mute-button"]',
+      '.volume-bar button',
+    ]);
     const isMuted = muteBtn
       ? (muteBtn.getAttribute("aria-label") || "").toLowerCase().includes("unmute") ||
-        (muteBtn.getAttribute("aria-label") || "").includes("取消静音")
+        (muteBtn.getAttribute("aria-label") || "").includes("取消静音") ||
+        (muteBtn.getAttribute("aria-label") || "").includes("恢复声音")
       : false;
 
     return {
@@ -247,21 +266,37 @@
   }
 
   // Command handlers
-  function handleCommand(command, payload) {
+  async function handleCommand(command, payload) {
     switch (command) {
       case "PLAY_PAUSE": {
         const btn = findEl([
           'button[data-testid="control-button-playpause"]',
           'button[data-testid="play-button"]',
+          'button[aria-label*="Play" i]',
+          'button[aria-label*="Pause" i]',
+          'button[aria-label*="播放"]',
+          'button[aria-label*="暂停"]',
+          'footer [data-testid="control-button-playpause"]',
+          'footer button[data-encore-id="buttonPrimary"]',
+          '[data-testid="player-controls"] button:nth-child(3)',
         ]);
-        if (btn) btn.click();
+        if (btn) {
+          btn.click();
+        } else {
+          const audio = document.querySelector("audio");
+          if (audio) {
+            if (audio.paused) audio.play();
+            else audio.pause();
+          }
+        }
         break;
       }
       case "NEXT_TRACK": {
         const btn = findEl([
           'button[data-testid="control-button-skip-forward"]',
-          'button[aria-label*="Next"]',
+          'button[aria-label*="Next" i]',
           'button[aria-label*="下一首"]',
+          'footer [data-testid="control-button-skip-forward"]',
         ]);
         if (btn) btn.click();
         break;
@@ -269,8 +304,9 @@
       case "PREV_TRACK": {
         const btn = findEl([
           'button[data-testid="control-button-skip-back"]',
-          'button[aria-label*="Previous"]',
+          'button[aria-label*="Previous" i]',
           'button[aria-label*="上一首"]',
+          'footer [data-testid="control-button-skip-back"]',
         ]);
         if (btn) btn.click();
         break;
@@ -278,8 +314,9 @@
       case "TOGGLE_SHUFFLE": {
         const btn = findEl([
           'button[data-testid="control-button-shuffle"]',
-          'button[aria-label*="Shuffle"]',
+          'button[aria-label*="Shuffle" i]',
           'button[aria-label*="随机播放"]',
+          'footer [data-testid="control-button-shuffle"]',
         ]);
         if (btn) btn.click();
         break;
@@ -287,8 +324,9 @@
       case "TOGGLE_REPEAT": {
         const btn = findEl([
           'button[data-testid="control-button-repeat"]',
-          'button[aria-label*="Repeat"]',
+          'button[aria-label*="Repeat" i]',
           'button[aria-label*="循环播放"]',
+          'footer [data-testid="control-button-repeat"]',
         ]);
         if (btn) btn.click();
         break;
@@ -296,7 +334,7 @@
       case "TOGGLE_LIKE": {
         const btn = findEl([
           'button[data-testid="add-button"]',
-          'button[aria-label*="Save to Your Library"]',
+          'button[aria-label*="Save to Your Library" i]',
           'button[aria-label*="添加到已喜欢的歌曲"]',
           'button[aria-label*="从已喜欢的歌曲中移除"]',
         ]);
@@ -304,7 +342,16 @@
         break;
       }
       case "TOGGLE_MUTE": {
-        const btn = findEl('button[data-testid="volume-bar-toggle-mute-button"]');
+        const btn = findEl([
+          'button[data-testid="volume-bar-toggle-mute-button"]',
+          'button[aria-label*="Mute" i]',
+          'button[aria-label*="Unmute" i]',
+          'button[aria-label*="静音"]',
+          'button[aria-label*="取消静音"]',
+          '[data-testid="volume-bar"] button',
+          'footer [data-testid="volume-bar-toggle-mute-button"]',
+          '.volume-bar button',
+        ]);
         if (btn) {
           btn.click();
         } else {
@@ -327,7 +374,8 @@
       }
     }
 
-    // Return latest state after action
+    // Wait a brief tick (120ms) for Spotify React DOM state to update
+    await new Promise((r) => setTimeout(r, 120));
     return getPlayerState();
   }
 
@@ -344,9 +392,8 @@
     }
 
     if (request.action === "COMMAND") {
-      const state = handleCommand(request.command, request.payload);
-      sendResponse(state);
-      return;
+      handleCommand(request.command, request.payload).then(sendResponse);
+      return true; // asynchronous response
     }
   });
 

@@ -10,7 +10,8 @@ const I18N = {
     statusConnecting: "检测中",
     btnMiniMode: "切换迷你模式 (播放/下一首/静音)",
     btnNormalMode: "切换完整模式",
-    btnPopout: "桌面置顶/独立悬浮窗",
+    btnPopout: "桌面独立悬浮小窗",
+    btnPinTop: "系统级永远置顶 (画中画)",
     btnFocus: "跳转至 Spotify 网页",
     emptyTitle: "未检测到 Spotify 网页",
     emptyDesc: "打开 Spotify Web 播放器即可在任意页面轻松遥控，无需 Premium 会员。",
@@ -37,7 +38,8 @@ const I18N = {
     statusConnecting: "Connecting...",
     btnMiniMode: "Switch to Mini Mode (Play/Next/Mute)",
     btnNormalMode: "Switch to Full Mode",
-    btnPopout: "Desktop Always-On-Top Window",
+    btnPopout: "Desktop Pop-out Window",
+    btnPinTop: "System Always on Top (PiP)",
     btnFocus: "Focus Spotify Tab",
     emptyTitle: "No Spotify Tab Found",
     emptyDesc: "Open Spotify Web Player to easily control playback anywhere, no Premium required.",
@@ -69,6 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const statusText = document.getElementById("status-text");
   const btnToggleMini = document.getElementById("btn-toggle-mini");
   const btnPopout = document.getElementById("btn-popout");
+  const btnPinWindow = document.getElementById("btn-pin-window");
   const btnFocusTab = document.getElementById("btn-focus-tab");
   const btnOpenSpotify = document.getElementById("btn-open-spotify");
 
@@ -107,7 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const chkAutoMute = document.getElementById("chk-auto-mute");
   const chkFloatingWidget = document.getElementById("chk-floating-widget");
 
-  // Mini Layout Elements (3 essential buttons: Play/Next/Mute)
+  // Mini Layout Elements (Essential buttons + Pin & Restore)
   const miniCoverArt = document.getElementById("mini-cover-art");
   const miniCoverFallback = document.getElementById("mini-cover-fallback");
   const miniTrackTitle = document.getElementById("mini-track-title");
@@ -119,6 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const miniBtnMute = document.getElementById("mini-btn-mute");
   const miniVolHigh = document.getElementById("mini-vol-high");
   const miniVolMute = document.getElementById("mini-vol-mute");
+  const miniBtnPin = document.getElementById("mini-btn-pin");
   const miniBtnRestore = document.getElementById("mini-btn-restore");
 
   // Interaction flags
@@ -155,14 +159,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Mini / Normal Mode Switcher (ONLY for detached desktop window)
+  // Mini / Normal Mode Switcher (ONLY for detached desktop window or PiP)
   function setMiniMode(mini) {
-    if (!window.location.search.includes("detached=true")) {
+    if (!window.location.search.includes("detached=true") && !pipWindow) {
       return;
     }
 
     isMiniMode = mini;
     document.body.classList.toggle("mini-mode", mini);
+    if (pipWindow) {
+      pipWindow.document.body.classList.toggle("mini-mode", mini);
+      try {
+        pipWindow.resizeTo(mini ? 320 : 340, mini ? 92 : 530);
+      } catch (e) {}
+    }
     chrome.storage.local.set({ isMiniMode: mini });
 
     // If running in detached popup window, lock to exact fixed dimensions
@@ -280,6 +290,38 @@ document.addEventListener("DOMContentLoaded", () => {
     if (miniTrackArtist) miniTrackArtist.innerText = "Spotify";
   }
 
+  // Optimistic UI Locks to avoid race conditions with polling
+  let optimisticPlayUntil = 0;
+  let optimisticMuteUntil = 0;
+
+  function updatePlayPauseIcons(isPlaying) {
+    if (isPlaying) {
+      playIcon.classList.add("hidden");
+      pauseIcon.classList.remove("hidden");
+      if (miniPlayIcon) miniPlayIcon.classList.add("hidden");
+      if (miniPauseIcon) miniPauseIcon.classList.remove("hidden");
+    } else {
+      playIcon.classList.remove("hidden");
+      pauseIcon.classList.add("hidden");
+      if (miniPlayIcon) miniPlayIcon.classList.remove("hidden");
+      if (miniPauseIcon) miniPauseIcon.classList.add("hidden");
+    }
+  }
+
+  function updateMuteIcons(isMuted) {
+    if (isMuted) {
+      volHighIcon.classList.add("hidden");
+      volMuteIcon.classList.remove("hidden");
+      if (miniVolHigh) miniVolHigh.classList.add("hidden");
+      if (miniVolMute) miniVolMute.classList.remove("hidden");
+    } else {
+      volHighIcon.classList.remove("hidden");
+      volMuteIcon.classList.add("hidden");
+      if (miniVolHigh) miniVolHigh.classList.remove("hidden");
+      if (miniVolMute) miniVolMute.classList.add("hidden");
+    }
+  }
+
   // Render player state to UI
   function renderPlayerState(state) {
     lastKnownState = state;
@@ -334,19 +376,9 @@ document.addEventListener("DOMContentLoaded", () => {
       adBadge.classList.add("hidden");
     }
 
-    // Play/Pause icon (both full and mini views)
-    if (state.isPlaying) {
-      playIcon.classList.add("hidden");
-      pauseIcon.classList.remove("hidden");
-
-      if (miniPlayIcon) miniPlayIcon.classList.add("hidden");
-      if (miniPauseIcon) miniPauseIcon.classList.remove("hidden");
-    } else {
-      playIcon.classList.remove("hidden");
-      pauseIcon.classList.add("hidden");
-
-      if (miniPlayIcon) miniPlayIcon.classList.remove("hidden");
-      if (miniPauseIcon) miniPauseIcon.classList.add("hidden");
+    // Play/Pause icon (honor optimistic click for 800ms)
+    if (Date.now() > optimisticPlayUntil) {
+      updatePlayPauseIcons(state.isPlaying);
     }
 
     // Shuffle & Repeat
@@ -385,19 +417,9 @@ document.addEventListener("DOMContentLoaded", () => {
       volumePercent.innerText = `${state.volume}%`;
     }
 
-    // Mute state (both full and mini views)
-    if (state.isMuted) {
-      volHighIcon.classList.add("hidden");
-      volMuteIcon.classList.remove("hidden");
-
-      if (miniVolHigh) miniVolHigh.classList.add("hidden");
-      if (miniVolMute) miniVolMute.classList.remove("hidden");
-    } else {
-      volHighIcon.classList.remove("hidden");
-      volMuteIcon.classList.add("hidden");
-
-      if (miniVolHigh) miniVolHigh.classList.remove("hidden");
-      if (miniVolMute) miniVolMute.classList.add("hidden");
+    // Mute state (honor optimistic click for 800ms)
+    if (Date.now() > optimisticMuteUntil) {
+      updateMuteIcons(state.isMuted);
     }
   }
 
@@ -455,20 +477,38 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Playback control buttons (Full layout)
-  btnPlayPause.addEventListener("click", () => {
+  // Unified Play/Pause and Mute Actions with Instant Optimistic UI feedback
+  function handlePlayPauseAction() {
     const isPlaying = playIcon.classList.contains("hidden");
-    if (isPlaying) {
-      playIcon.classList.remove("hidden");
-      pauseIcon.classList.add("hidden");
-    } else {
-      playIcon.classList.add("hidden");
-      pauseIcon.classList.remove("hidden");
-    }
+    const nextState = !isPlaying;
+    updatePlayPauseIcons(nextState);
+    optimisticPlayUntil = Date.now() + 800;
     sendCommand("PLAY_PAUSE");
-  });
+  }
+
+  function handleMuteAction() {
+    const isMuted = volHighIcon.classList.contains("hidden");
+    const nextState = !isMuted;
+    updateMuteIcons(nextState);
+    optimisticMuteUntil = Date.now() + 800;
+    sendCommand("TOGGLE_MUTE");
+  }
+
+  btnPlayPause.addEventListener("click", handlePlayPauseAction);
+  if (miniBtnPlayPause) {
+    miniBtnPlayPause.addEventListener("click", handlePlayPauseAction);
+  }
+
+  btnMute.addEventListener("click", handleMuteAction);
+  if (miniBtnMute) {
+    miniBtnMute.addEventListener("click", handleMuteAction);
+  }
 
   btnNext.addEventListener("click", () => sendCommand("NEXT_TRACK"));
+  if (miniBtnNext) {
+    miniBtnNext.addEventListener("click", () => sendCommand("NEXT_TRACK"));
+  }
+
   btnPrev.addEventListener("click", () => sendCommand("PREV_TRACK"));
   btnShuffle.addEventListener("click", () => sendCommand("TOGGLE_SHUFFLE"));
   btnRepeat.addEventListener("click", () => sendCommand("TOGGLE_REPEAT"));
@@ -478,39 +518,72 @@ document.addEventListener("DOMContentLoaded", () => {
     sendCommand("TOGGLE_LIKE");
   });
 
-  btnMute.addEventListener("click", () => {
-    volHighIcon.classList.toggle("hidden");
-    volMuteIcon.classList.toggle("hidden");
-    sendCommand("TOGGLE_MUTE");
-  });
+  // System-level Always-on-Top / Picture-in-Picture
+  let pipWindow = null;
 
-  // Mini layout essential buttons (Play/Pause, Next Track, Mute)
-  if (miniBtnPlayPause) {
-    miniBtnPlayPause.addEventListener("click", () => {
-      const isPlaying = miniPlayIcon && miniPlayIcon.classList.contains("hidden");
-      if (isPlaying) {
-        if (miniPlayIcon) miniPlayIcon.classList.remove("hidden");
-        if (miniPauseIcon) miniPauseIcon.classList.add("hidden");
-      } else {
-        if (miniPlayIcon) miniPlayIcon.classList.add("hidden");
-        if (miniPauseIcon) miniPauseIcon.classList.remove("hidden");
+  async function togglePictureInPicture() {
+    if (!("documentPictureInPicture" in window)) {
+      alert(
+        currentLang === "zh-CN"
+          ? "当前浏览器环境未开放 Document Picture-in-Picture。\n💡 系统级置顶方案推荐：\n1. 安装微软官方 PowerToys，在小窗口按下快捷键 Win + Ctrl + T 即可永久置顶！\n2. 或双击项目目录中的「置顶当前窗口.bat」。"
+          : "Document Picture-in-Picture is not supported in this context.\n💡 Tip: Use Win + Ctrl + T (PowerToys) to pin this window on top!"
+      );
+      return;
+    }
+
+    if (pipWindow) {
+      pipWindow.close();
+      pipWindow = null;
+      updatePinButtons(false);
+      return;
+    }
+
+    try {
+      const w = isMiniMode ? 320 : 340;
+      const h = isMiniMode ? 92 : 530;
+      pipWindow = await window.documentPictureInPicture.requestWindow({
+        width: w,
+        height: h,
+      });
+
+      // Transfer style sheets
+      const styleLinks = document.querySelectorAll('link[rel="stylesheet"], style');
+      styleLinks.forEach((el) => {
+        pipWindow.document.head.appendChild(el.cloneNode(true));
+      });
+
+      const container = document.querySelector(".player-container");
+      if (container) {
+        pipWindow.document.body.className = document.body.className;
+        pipWindow.document.body.style.margin = "0";
+        pipWindow.document.body.style.background = "#121212";
+        pipWindow.document.body.appendChild(container);
       }
-      sendCommand("PLAY_PAUSE");
-    });
+
+      updatePinButtons(true);
+
+      pipWindow.addEventListener("pagehide", () => {
+        if (container) {
+          document.body.appendChild(container);
+        }
+        pipWindow = null;
+        updatePinButtons(false);
+      });
+    } catch (err) {
+      console.warn("Failed to open Document PiP window:", err);
+    }
   }
 
-  if (miniBtnNext) {
-    miniBtnNext.addEventListener("click", () => sendCommand("NEXT_TRACK"));
+  function updatePinButtons(active) {
+    if (btnPinWindow) btnPinWindow.classList.toggle("active", active);
+    if (miniBtnPin) miniBtnPin.classList.toggle("active", active);
   }
 
-  if (miniBtnMute) {
-    miniBtnMute.addEventListener("click", () => {
-      if (miniVolHigh && miniVolMute) {
-        miniVolHigh.classList.toggle("hidden");
-        miniVolMute.classList.toggle("hidden");
-      }
-      sendCommand("TOGGLE_MUTE");
-    });
+  if (btnPinWindow) {
+    btnPinWindow.addEventListener("click", togglePictureInPicture);
+  }
+  if (miniBtnPin) {
+    miniBtnPin.addEventListener("click", togglePictureInPicture);
   }
 
   // Seek bar events

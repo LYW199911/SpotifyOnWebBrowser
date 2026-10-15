@@ -765,6 +765,13 @@ body.detached .player-container {
   color: var(--spotify-green);
 }
 
+.mini-ctrl-btn.active,
+.icon-btn-sm.active {
+  color: var(--spotify-green) !important;
+  background: rgba(29, 185, 84, 0.18) !important;
+  border-color: rgba(29, 185, 84, 0.4) !important;
+}
+
 /* =========================================================
    Mini Player Mode (Ultra-compact: Play / Next / Mute)
    ========================================================= */
