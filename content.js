@@ -48,48 +48,179 @@
     return false;
   }
 
-  // Inspect current player state
-  function getPlayerState() {
-    // 1. Accurately detect playback state strictly from footer playback bar
-    let isPlaying = false;
+  // Synthetic click helper that triggers pointer, mouse and click events for React
+  function clickElement(el) {
+    if (!el) return;
+    try {
+      el.focus();
+      const mouseEventInit = { bubbles: true, cancelable: true, view: window };
+      el.dispatchEvent(new PointerEvent("pointerdown", mouseEventInit));
+      el.dispatchEvent(new MouseEvent("mousedown", mouseEventInit));
+      el.dispatchEvent(new PointerEvent("pointerup", mouseEventInit));
+      el.dispatchEvent(new MouseEvent("mouseup", mouseEventInit));
+      el.click();
+    } catch (e) {
+      el.click();
+    }
+  }
 
-    // Direct check: In Spotify Web, pause button exists in footer ONLY when actively playing
-    const footerPauseBtn = document.querySelector(
-      'footer [data-testid="control-button-pause"], [data-testid="player-controls"] [data-testid="control-button-pause"], [data-testid="control-button-pause"], footer button[aria-label*="Pause" i], footer button[aria-label*="暂停"]'
-    );
-    // Play button exists in footer ONLY when paused
-    const footerPlayBtn = document.querySelector(
-      'footer [data-testid="control-button-play"], [data-testid="player-controls"] [data-testid="control-button-play"], [data-testid="control-button-play"], footer button[aria-label*="Play" i], footer button[aria-label*="播放"]'
-    );
+  // Regex helpers strictly matching Play and Pause labels across languages
+  // (supports shortcuts like "(空格)", "(Space)", but NEVER matches "播放队列" or "正在播放视图" or "随机播放")
+  function isPlayLabel(lbl) {
+    if (!lbl) return false;
+    lbl = lbl.trim().toLowerCase();
+    return /^(play|播放|再生|재생|lecture|lire|wiedergabe|reproducir)(\s*[\(\[（].*)?$/i.test(lbl);
+  }
 
-    if (footerPauseBtn) {
-      isPlaying = true;
-    } else if (footerPlayBtn) {
-      isPlaying = false;
-    } else {
-      // Fallback: check primary button in footer
-      const primaryBtn = document.querySelector(
-        'footer [data-testid="player-controls"] button[data-encore-id="buttonPrimary"], footer button[data-encore-id="buttonPrimary"], footer [data-testid="control-button-playpause"]'
-      );
-      if (primaryBtn) {
-        const label = (primaryBtn.getAttribute("aria-label") || "").toLowerCase();
-        if (label.includes("pause") || label.includes("暂停")) {
-          isPlaying = true;
-        } else if (label.includes("play") || label.includes("播放")) {
-          isPlaying = false;
-        } else {
-          const hasPauseBars = !!primaryBtn.querySelector('path[d*="M5.7"], path[d*="M6"], rect');
-          if (hasPauseBars) {
-            isPlaying = true;
-          }
-        }
-      } else {
-        const audio = document.querySelector("audio");
-        if (audio && !audio.paused && audio.currentTime > 0) {
-          isPlaying = true;
-        }
+  function isPauseLabel(lbl) {
+    if (!lbl) return false;
+    lbl = lbl.trim().toLowerCase();
+    return /^(pause|暂停|暫停|一時停止|일시정지|pausa)(\s*[\(\[（].*)?$/i.test(lbl);
+  }
+
+  // Helper to inspect SVG inside button for Pause bars or Play triangle
+  function inspectSvgPlayPause(button) {
+    if (!button) return null;
+    const svg = button.querySelector("svg");
+    if (!svg) return null;
+
+    const svgAria = svg.getAttribute("aria-label");
+    if (isPauseLabel(svgAria)) return "pause";
+    if (isPlayLabel(svgAria)) return "play";
+
+    if (svg.querySelectorAll("rect").length >= 2) return "pause";
+    if (svg.querySelector("polygon")) return "play";
+
+    const path = svg.querySelector("path");
+    if (path) {
+      const d = path.getAttribute("d") || "";
+      // Pause icon paths in Spotify Web (two vertical bars)
+      if (
+        d.includes("M5.7") ||
+        d.includes("M6") ||
+        d.includes("v16.6") ||
+        d.includes("19h4") ||
+        d.includes("14h4") ||
+        d.includes("H5.7")
+      ) {
+        return "pause";
+      }
+      // Play icon paths in Spotify Web (right-pointing triangle)
+      if (
+        d.includes("7.05") ||
+        d.includes("3.606") ||
+        d.includes("20.394") ||
+        d.includes("13.49") ||
+        d.includes("19.788")
+      ) {
+        return "play";
       }
     }
+
+    return null;
+  }
+
+  // Dedicated helper to locate the true center Play/Pause button strictly in playback controls
+  function getPlayPauseButton() {
+    // 1. Direct data-testid check inside player-controls or footer
+    const directPause = document.querySelector(
+      'footer [data-testid="control-button-pause"], [data-testid="player-controls"] [data-testid="control-button-pause"], [data-testid="now-playing-bar"] [data-testid="control-button-pause"]'
+    );
+    if (directPause) return directPause;
+
+    const directPlay = document.querySelector(
+      'footer [data-testid="control-button-play"], [data-testid="player-controls"] [data-testid="control-button-play"], [data-testid="now-playing-bar"] [data-testid="control-button-play"]'
+    );
+    if (directPlay) return directPlay;
+
+    // 2. Primary button in footer (In Spotify Encore design, Play/Pause is the ONLY buttonPrimary in footer)
+    const primaryBtn = document.querySelector(
+      'footer button[data-encore-id="buttonPrimary"], [data-testid="player-controls"] button[data-encore-id="buttonPrimary"], [data-testid="now-playing-bar"] button[data-encore-id="buttonPrimary"]'
+    );
+    if (primaryBtn) return primaryBtn;
+
+    // 3. Button with exact Play/Pause aria-label strictly within player-controls or footer
+    const ctrlButtons = document.querySelectorAll(
+      '[data-testid="player-controls"] button, footer .player-controls button, footer button, [data-testid="now-playing-bar"] button'
+    );
+    for (const b of ctrlButtons) {
+      const lbl = b.getAttribute("aria-label");
+      if (isPauseLabel(lbl) || isPlayLabel(lbl)) {
+        return b;
+      }
+    }
+
+    // 4. Center button in player-controls (Index 2 in 5 buttons: Shuffle, Prev, [Play/Pause], Next, Repeat)
+    const rowButtons = document.querySelectorAll(
+      '[data-testid="player-controls"] button, footer .player-controls button'
+    );
+    if (rowButtons.length >= 3 && rowButtons.length <= 7) {
+      return rowButtons[Math.floor(rowButtons.length / 2)];
+    }
+
+    return null;
+  }
+
+  // Tracking position changes to reliably detect if playback is advancing
+  let lastPosSec = -1;
+  let lastPosTime = 0;
+  let isPositionAdvancing = false;
+
+  function updatePositionAdvance(curSec) {
+    const now = Date.now();
+    if (lastPosSec >= 0 && now - lastPosTime >= 800) {
+      isPositionAdvancing = curSec > lastPosSec;
+    }
+    lastPosSec = curSec;
+    lastPosTime = now;
+  }
+
+  function detectIsPlaying() {
+    // 1. Check exact data-testid in footer / player-controls
+    const pauseBtn = document.querySelector(
+      'footer [data-testid="control-button-pause"], [data-testid="player-controls"] [data-testid="control-button-pause"], [data-testid="now-playing-bar"] [data-testid="control-button-pause"]'
+    );
+    if (pauseBtn) return true;
+
+    const playBtn = document.querySelector(
+      'footer [data-testid="control-button-play"], [data-testid="player-controls"] [data-testid="control-button-play"], [data-testid="now-playing-bar"] [data-testid="control-button-play"]'
+    );
+    if (playBtn) return false;
+
+    // 2. Inspect the Play/Pause button in footer
+    const btn = getPlayPauseButton();
+    if (btn) {
+      const lbl = btn.getAttribute("aria-label");
+      if (isPauseLabel(lbl)) return true; // Label is "Pause" -> actively playing
+      if (isPlayLabel(lbl)) return false; // Label is "Play" -> paused
+
+      const svgType = inspectSvgPlayPause(btn);
+      if (svgType === "pause") return true; // Pause icon visible -> actively playing
+      if (svgType === "play") return false; // Play icon visible -> paused
+    }
+
+    // 3. Native HTML5 Audio element check (Spotify streams through <audio>)
+    const audios = document.querySelectorAll("audio");
+    for (const a of audios) {
+      if (!a.paused && a.currentTime > 0 && !a.ended) {
+        return true;
+      }
+    }
+
+    // 4. Native MediaSession API check
+    if (navigator.mediaSession && navigator.mediaSession.playbackState) {
+      if (navigator.mediaSession.playbackState === "playing") return true;
+      if (navigator.mediaSession.playbackState === "paused") return false;
+    }
+
+    // 5. Playback position advancing check
+    if (isPositionAdvancing) return true;
+
+    return false;
+  }
+
+  // Inspect current player state
+  function getPlayerState() {
 
     // Title & Artist
     const titleEl = findEl([
@@ -124,12 +255,13 @@
       '.playback-bar__progress-time:last-child',
     ]);
 
-    const currentTimeStr = posEl ? posEl.innerText.trim() : "0:00";
-    const durationStr = durEl ? durEl.innerText.trim() : "0:00";
-
     const curSec = parseTimeSeconds(currentTimeStr);
     const durSec = parseTimeSeconds(durationStr);
     const progressPercent = durSec > 0 ? Math.min(100, (curSec / durSec) * 100) : 0;
+    updatePositionAdvance(curSec);
+
+    // Accurately detect playback state
+    const isPlaying = detectIsPlaying();
 
     // Shuffle & Repeat
     const shuffleBtn = findEl([
@@ -317,18 +449,9 @@
   async function handleCommand(command, payload) {
     switch (command) {
       case "PLAY_PAUSE": {
-        const btn = findEl([
-          'footer [data-testid="control-button-pause"]',
-          'footer [data-testid="control-button-play"]',
-          '[data-testid="player-controls"] [data-testid="control-button-pause"]',
-          '[data-testid="player-controls"] [data-testid="control-button-play"]',
-          'footer button[data-encore-id="buttonPrimary"]',
-          '[data-testid="player-controls"] button:nth-child(3)',
-          'footer [data-testid="control-button-playpause"]',
-          'button[data-testid="control-button-playpause"]',
-        ]);
+        const btn = getPlayPauseButton();
         if (btn) {
-          btn.click();
+          clickElement(btn);
         } else {
           const audio = document.querySelector("audio");
           if (audio) {
@@ -341,66 +464,67 @@
       case "NEXT_TRACK": {
         const btn = findEl([
           'button[data-testid="control-button-skip-forward"]',
+          'footer [data-testid="control-button-skip-forward"]',
           'button[aria-label*="Next" i]',
           'button[aria-label*="下一首"]',
-          'footer [data-testid="control-button-skip-forward"]',
         ]);
-        if (btn) btn.click();
+        if (btn) clickElement(btn);
         break;
       }
       case "PREV_TRACK": {
         const btn = findEl([
           'button[data-testid="control-button-skip-back"]',
+          'footer [data-testid="control-button-skip-back"]',
           'button[aria-label*="Previous" i]',
           'button[aria-label*="上一首"]',
-          'footer [data-testid="control-button-skip-back"]',
         ]);
-        if (btn) btn.click();
+        if (btn) clickElement(btn);
         break;
       }
       case "TOGGLE_SHUFFLE": {
         const btn = findEl([
           'button[data-testid="control-button-shuffle"]',
+          'footer [data-testid="control-button-shuffle"]',
           'button[aria-label*="Shuffle" i]',
           'button[aria-label*="随机播放"]',
-          'footer [data-testid="control-button-shuffle"]',
         ]);
-        if (btn) btn.click();
+        if (btn) clickElement(btn);
         break;
       }
       case "TOGGLE_REPEAT": {
         const btn = findEl([
           'button[data-testid="control-button-repeat"]',
+          'footer [data-testid="control-button-repeat"]',
           'button[aria-label*="Repeat" i]',
           'button[aria-label*="循环播放"]',
-          'footer [data-testid="control-button-repeat"]',
         ]);
-        if (btn) btn.click();
+        if (btn) clickElement(btn);
         break;
       }
       case "TOGGLE_LIKE": {
         const btn = findEl([
           'button[data-testid="add-button"]',
+          'footer [data-testid="add-button"]',
           'button[aria-label*="Save to Your Library" i]',
           'button[aria-label*="添加到已喜欢的歌曲"]',
           'button[aria-label*="从已喜欢的歌曲中移除"]',
         ]);
-        if (btn) btn.click();
+        if (btn) clickElement(btn);
         break;
       }
       case "TOGGLE_MUTE": {
         const btn = findEl([
           'button[data-testid="volume-bar-toggle-mute-button"]',
+          'footer [data-testid="volume-bar-toggle-mute-button"]',
           'button[aria-label*="Mute" i]',
           'button[aria-label*="Unmute" i]',
           'button[aria-label*="静音"]',
           'button[aria-label*="取消静音"]',
           '[data-testid="volume-bar"] button',
-          'footer [data-testid="volume-bar-toggle-mute-button"]',
           '.volume-bar button',
         ]);
         if (btn) {
-          btn.click();
+          clickElement(btn);
         } else {
           const audios = document.querySelectorAll("audio");
           audios.forEach((a) => (a.muted = !a.muted));
@@ -421,8 +545,8 @@
       }
     }
 
-    // Wait a brief tick (120ms) for Spotify React DOM state to update
-    await new Promise((r) => setTimeout(r, 120));
+    // Wait a brief tick (200ms) for Spotify React DOM state to update
+    await new Promise((r) => setTimeout(r, 200));
     return getPlayerState();
   }
 

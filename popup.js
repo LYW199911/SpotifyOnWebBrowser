@@ -479,16 +479,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Unified Play/Pause and Mute Actions with Instant Optimistic UI feedback
   function handlePlayPauseAction() {
-    const isPlaying = playIcon.classList.contains("hidden");
-    const nextState = !isPlaying;
+    let isCurrentlyPlaying = false;
+    if (lastKnownState && typeof lastKnownState.isPlaying === "boolean") {
+      isCurrentlyPlaying = lastKnownState.isPlaying;
+    } else {
+      isCurrentlyPlaying = playIcon.classList.contains("hidden");
+    }
+    const nextState = !isCurrentlyPlaying;
+    if (lastKnownState) {
+      lastKnownState.isPlaying = nextState;
+    }
     updatePlayPauseIcons(nextState);
     optimisticPlayUntil = Date.now() + 1500;
     sendCommand("PLAY_PAUSE");
   }
 
   function handleMuteAction() {
-    const isMuted = volHighIcon.classList.contains("hidden");
-    const nextState = !isMuted;
+    let isCurrentlyMuted = false;
+    if (lastKnownState && typeof lastKnownState.isMuted === "boolean") {
+      isCurrentlyMuted = lastKnownState.isMuted;
+    } else {
+      isCurrentlyMuted = volHighIcon.classList.contains("hidden");
+    }
+    const nextState = !isCurrentlyMuted;
+    if (lastKnownState) {
+      lastKnownState.isMuted = nextState;
+    }
     updateMuteIcons(nextState);
     optimisticMuteUntil = Date.now() + 1500;
     sendCommand("TOGGLE_MUTE");

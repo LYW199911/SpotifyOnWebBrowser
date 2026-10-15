@@ -315,8 +315,22 @@
       pillLogo.style.display = "block";
     }
 
-    // Play / Pause disc animation and icons
-    if (state.isPlaying) {
+    // Play / Pause disc animation and icons (honor optimistic click for 1500ms)
+    if (Date.now() > optimisticPlayUntil) {
+      updatePlayIcons(state.isPlaying);
+    }
+
+    // Progress
+    const percent = typeof state.progressPercent === "number" ? state.progressPercent : 0;
+    cardProgressFill.style.width = `${percent}%`;
+    cardCurrentTime.innerText = state.currentTime || "0:00";
+    cardDuration.innerText = state.duration || "0:00";
+  }
+
+  let optimisticPlayUntil = 0;
+
+  function updatePlayIcons(isPlaying) {
+    if (isPlaying) {
       discWrapper.className = "disc-wrapper playing";
       pillIconPlay.style.display = "none";
       pillIconPause.style.display = "block";
@@ -329,12 +343,23 @@
       cardIconPlay.style.display = "block";
       cardIconPause.style.display = "none";
     }
+  }
 
-    // Progress
-    const percent = typeof state.progressPercent === "number" ? state.progressPercent : 0;
-    cardProgressFill.style.width = `${percent}%`;
-    cardCurrentTime.innerText = state.currentTime || "0:00";
-    cardDuration.innerText = state.duration || "0:00";
+  function handlePlayPause(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    let isCurrentlyPlaying = false;
+    if (currentState && typeof currentState.isPlaying === "boolean") {
+      isCurrentlyPlaying = currentState.isPlaying;
+    } else {
+      isCurrentlyPlaying = pillIconPlay.style.display === "none";
+    }
+    const nextState = !isCurrentlyPlaying;
+    if (currentState) {
+      currentState.isPlaying = nextState;
+    }
+    updatePlayIcons(nextState);
+    optimisticPlayUntil = Date.now() + 1500;
+    sendCommand("PLAY_PAUSE");
   }
 
   // Fetch State from background
@@ -365,11 +390,8 @@
   cardBtnClose.addEventListener("click", () => toggleExpand(false));
 
   // Playback Controls
-  pillBtnPlay.addEventListener("click", (e) => {
-    e.stopPropagation();
-    sendCommand("PLAY_PAUSE");
-  });
-  cardBtnPlay.addEventListener("click", () => sendCommand("PLAY_PAUSE"));
+  pillBtnPlay.addEventListener("click", handlePlayPause);
+  cardBtnPlay.addEventListener("click", handlePlayPause);
 
   pillBtnNext.addEventListener("click", (e) => {
     e.stopPropagation();
