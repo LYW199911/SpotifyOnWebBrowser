@@ -765,18 +765,26 @@ body.detached .player-container {
   color: var(--spotify-green);
 }
 
-/* 1. Explicit Mini Mode */
-body.mini-mode {
-  width: 320px !important;
-  min-width: 320px !important;
-  height: 56px !important;
-  min-height: 56px !important;
-  max-height: 56px !important;
-  overflow: hidden !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border-radius: var(--radius-md);
-  background: var(--bg-main) !important;
+/* =========================================================
+   Mini Player Mode (Ultra-compact: Play / Next / Mute)
+   ========================================================= */
+
+body.detached:not(.mini-mode) {
+  width: 100vw;
+  height: 100vh;
+  min-width: 300px;
+  min-height: 0;
+  border-radius: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+body.detached:not(.mini-mode) .player-container {
+  min-height: 100%;
+  padding: 14px;
+}
+
+body.mini-mode,
 body.detached.mini-mode {
   width: 100vw !important;
   height: 100vh !important;
@@ -792,6 +800,76 @@ body.detached.mini-mode {
   background: var(--bg-main) !important;
 }
 
+/* Hide header, full layout and disconnected banner in mini mode */
+body.mini-mode .header,
+body.detached.mini-mode .header {
+  display: none !important;
+}
+
+body.mini-mode #full-player-content,
+body.detached.mini-mode #full-player-content {
+  display: none !important;
+}
+
+body.mini-mode #no-tab-view,
+body.detached.mini-mode #no-tab-view {
+  display: none !important;
+}
+
+/* Ensure player-view container is active & centered */
+body.mini-mode #player-view,
+body.detached.mini-mode #player-view {
+  display: flex !important;
+  flex: 1 !important;
+  width: 100% !important;
+  height: 100% !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+}
+
+/* Display the mini player strip */
+body.mini-mode #mini-player-strip,
+body.detached.mini-mode #mini-player-strip {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  gap: 8px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Container styling in mini mode */
+body.mini-mode .player-container,
+body.detached.mini-mode .player-container {
+  padding: 0 10px !important;
+  margin: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  min-height: 0 !important;
+  max-height: 100vh !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  gap: 0 !important;
+}
+
+/* Prevent all scrollbars in mini mode */
+body.mini-mode,
+body.mini-mode *,
+body.detached.mini-mode,
+body.detached.mini-mode * {
+  scrollbar-width: none !important;
+}
+
+body.mini-mode::-webkit-scrollbar,
+body.mini-mode *::-webkit-scrollbar,
 body.detached.mini-mode::-webkit-scrollbar,
 body.detached.mini-mode *::-webkit-scrollbar {
   display: none !important;
@@ -799,31 +877,4 @@ body.detached.mini-mode *::-webkit-scrollbar {
   height: 0 !important;
 }
 
-body.detached.mini-mode .header {
-  display: none !important;
-}
-
-body.detached.mini-mode #full-player-content {
-  display: none !important;
-}
-
-body.detached.mini-mode #no-tab-view {
-  display: none !important;
-}
-
-body.detached.mini-mode #mini-player-strip {
-  display: flex !important;
-}
-
-body.detached.mini-mode .player-container {
-  padding: 0 10px !important;
-  margin: 0 !important;
-  height: 100vh !important;
-  min-height: 0 !important;
-  box-sizing: border-box !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: center !important;
-  overflow: hidden !important;
-}
 

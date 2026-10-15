@@ -219,6 +219,33 @@ document.addEventListener("DOMContentLoaded", () => {
     miniBtnRestore.addEventListener("click", () => setMiniMode(false));
   }
 
+  // Mini strip song info click: focus Spotify tab
+  const miniStripLeft = document.querySelector(".mini-strip-left");
+  if (miniStripLeft) {
+    miniStripLeft.style.cursor = "pointer";
+    miniStripLeft.title = "点击跳转至 Spotify / Click to focus Spotify";
+    miniStripLeft.addEventListener("click", () => {
+      chrome.runtime.sendMessage({ action: "FOCUS_SPOTIFY" });
+    });
+  }
+
+  // Lock mini mode size if user attempts to drag resize
+  let resizeTimer = null;
+  window.addEventListener("resize", () => {
+    if (!isDetachedWindow || !isMiniMode) return;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (chrome.windows && chrome.windows.getCurrent) {
+        chrome.windows.getCurrent((win) => {
+          if (!win || !isMiniMode) return;
+          if (Math.abs(win.width - 320) > 15 || Math.abs(win.height - 92) > 15) {
+            chrome.windows.update(win.id, { width: 320, height: 92 });
+          }
+        });
+      }
+    }, 250);
+  });
+
   // Auto-mute toggle
   chkAutoMute.addEventListener("change", () => {
     chrome.storage.local.set({ autoMuteAds: chkAutoMute.checked });
