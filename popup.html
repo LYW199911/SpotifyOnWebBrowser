@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spotify 控制器</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="player-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="brand">
+        <svg class="spotify-logo" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.627.627 0 0 1-.86.208c-2.355-1.439-5.32-1.764-8.814-.966a.627.627 0 1 1-.28-1.222c3.824-.875 7.098-.507 9.746 1.118a.627.627 0 0 1 .208.862zm1.225-2.723a.784.784 0 0 1-1.077.26c-2.696-1.657-6.805-2.136-9.993-1.168a.784.784 0 1 1-.462-1.498c3.64-1.104 8.18-.574 11.272 1.329a.785.785 0 0 1 .26 1.077zm.106-2.836C14.689 8.94 9.362 8.766 6.273 9.704a.942.942 0 1 1-.55-1.802c3.543-1.076 9.426-.874 13.23 1.385a.942.942 0 0 1-.995 1.578z"/>
+        </svg>
+        <span class="brand-title" data-i18n="brandTitle">Spotify 控制器</span>
+      </div>
+
+      <div class="header-actions">
+        <!-- Language Switch -->
+        <button id="btn-lang" class="lang-btn" title="切换语言 / Switch Language">
+          <span id="lang-text">中 / EN</span>
+        </button>
+
+        <!-- Status -->
+        <div id="status-pill" class="status-pill offline" title="连接状态">
+          <span class="status-dot"></span>
+          <span id="status-text" data-i18n="statusConnecting">检测中</span>
+        </div>
+
+        <!-- Desktop PiP / Pop-out Window -->
+        <button id="btn-popout" class="icon-btn-sm" data-i18n-title="btnPopout" title="桌面置顶/独立悬浮窗">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <rect x="12" y="9" width="8" height="6" rx="1" ry="1" fill="currentColor"></rect>
+          </svg>
+        </button>
+
+        <!-- Focus Tab -->
+        <button id="btn-focus-tab" class="icon-btn-sm" data-i18n-title="btnFocus" title="跳转至 Spotify 网页">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Disconnected / No Tab View -->
+    <div id="no-tab-view" class="view-panel hidden">
+      <div class="empty-state">
+        <div class="empty-icon-wrapper">
+          <svg viewBox="0 0 24 24" width="48" height="48" fill="#535353">
+            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+          </svg>
+        </div>
+        <h3 class="empty-title" data-i18n="emptyTitle">未检测到 Spotify 网页</h3>
+        <p class="empty-desc" data-i18n="emptyDesc">打开 Spotify Web 播放器即可在任意页面轻松遥控，无需 Premium 会员。</p>
+        <button id="btn-open-spotify" class="btn-primary">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.627.627 0 0 1-.86.208c-2.355-1.439-5.32-1.764-8.814-.966a.627.627 0 1 1-.28-1.222c3.824-.875 7.098-.507 9.746 1.118a.627.627 0 0 1 .208.862zm1.225-2.723a.784.784 0 0 1-1.077.26c-2.696-1.657-6.805-2.136-9.993-1.168a.784.784 0 1 1-.462-1.498c3.64-1.104 8.18-.574 11.272 1.329a.785.785 0 0 1 .26 1.077zm.106-2.836C14.689 8.94 9.362 8.766 6.273 9.704a.942.942 0 1 1-.55-1.802c3.543-1.076 9.426-.874 13.23 1.385a.942.942 0 0 1-.995 1.578z"/>
+          </svg>
+          <span data-i18n="btnOpenSpotify">打开 Spotify 网页版</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Active Player View -->
+    <div id="player-view" class="view-panel">
+      <!-- Track Info & Cover -->
+      <div class="track-card">
+        <div class="cover-wrapper" id="cover-container">
+          <img id="cover-art" src="" alt="Album Art" class="cover-image" />
+          <div id="cover-fallback" class="cover-fallback">
+            <svg viewBox="0 0 24 24" width="40" height="40" fill="#727272">
+              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+            </svg>
+          </div>
+          <div id="ad-badge" class="ad-badge hidden" data-i18n="adBadge">广告中</div>
+        </div>
+
+        <div class="track-details">
+          <div class="track-header-row">
+            <div class="text-info">
+              <div id="track-title" class="track-title" data-i18n="notPlaying" title="暂未播放">暂未播放</div>
+              <div id="track-artist" class="track-artist" data-i18n="playToStart" title="打开歌曲即可控制">打开歌曲即可控制</div>
+            </div>
+            <button id="btn-like" class="icon-btn-fav" data-i18n-title="btnLike" title="添加到喜欢">
+              <svg id="like-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress Section -->
+      <div class="progress-section">
+        <div class="progress-bar-container" id="seek-container">
+          <div class="progress-bar-bg">
+            <div id="progress-fill" class="progress-bar-fill" style="width: 0%;"></div>
+          </div>
+          <input type="range" id="seek-slider" min="0" max="100" value="0" step="0.1" class="seek-slider" />
+        </div>
+        <div class="time-display">
+          <span id="current-time">0:00</span>
+          <span id="total-duration">0:00</span>
+        </div>
+      </div>
+
+      <!-- Playback Controls -->
+      <div class="controls-row">
+        <button id="btn-shuffle" class="icon-btn" data-i18n-title="btnShuffle" title="随机播放">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 3 21 3 21 8"></polyline>
+            <line x1="4" y1="20" x2="21" y2="3"></line>
+            <polyline points="21 16 21 21 16 21"></polyline>
+            <line x1="15" y1="15" x2="21" y2="21"></line>
+            <line x1="4" y1="4" x2="9" y2="9"></line>
+          </svg>
+        </button>
+
+        <button id="btn-prev" class="icon-btn" data-i18n-title="btnPrev" title="上一首 (Alt+Shift+Left)">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+            <polygon points="19 20 9 12 19 4 19 20"></polygon>
+            <line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2.5"></line>
+          </svg>
+        </button>
+
+        <button id="btn-play-pause" class="btn-play-pause" data-i18n-title="btnPlayPause" title="播放 / 暂停 (Alt+Shift+P)">
+          <svg id="play-icon" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+            <polygon points="6 4 20 12 6 20 6 4"></polygon>
+          </svg>
+          <svg id="pause-icon" class="hidden" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+            <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+            <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+          </svg>
+        </button>
+
+        <button id="btn-next" class="icon-btn" data-i18n-title="btnNext" title="下一首 (Alt+Shift+Right)">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+            <polygon points="5 4 15 12 5 20 5 4"></polygon>
+            <line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2.5"></line>
+          </svg>
+        </button>
+
+        <button id="btn-repeat" class="icon-btn" data-i18n-title="btnRepeat" title="循环播放">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="17 1 21 5 17 9"></polyline>
+            <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+            <polyline points="7 23 3 19 7 15"></polyline>
+            <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Volume Bar -->
+      <div class="volume-container">
+        <button id="btn-mute" class="icon-btn-sm" data-i18n-title="btnMute" title="静音切换">
+          <svg id="vol-high-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+          </svg>
+          <svg id="vol-mute-icon" class="hidden" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+            <line x1="17" y1="9" x2="23" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+          </svg>
+        </button>
+        <div class="volume-slider-wrapper">
+          <input type="range" id="volume-slider" min="0" max="100" value="70" class="volume-slider" />
+          <div id="volume-fill" class="volume-fill" style="width: 70%;"></div>
+        </div>
+        <span id="volume-percent" class="volume-percent">70%</span>
+      </div>
+    </div>
+
+    <!-- Footer: Auto Mute Ads & In-Page Widget Switch & Shortcut Tips -->
+    <footer class="footer">
+      <div class="footer-toggles">
+        <div class="setting-toggle">
+          <label class="switch">
+            <input type="checkbox" id="chk-auto-mute" />
+            <span class="slider"></span>
+          </label>
+          <span class="toggle-label" data-i18n="toggleAutoMute" title="检测到广告时自动静音网页，播完后自动恢复">广告静音</span>
+        </div>
+        <div class="setting-toggle">
+          <label class="switch">
+            <input type="checkbox" id="chk-floating-widget" checked />
+            <span class="slider"></span>
+          </label>
+          <span class="toggle-label" data-i18n="toggleFloatingWidget" title="在浏览网页时显示可拖拽音乐悬浮球">网页悬浮球</span>
+        </div>
+      </div>
+      <div class="shortcut-tip" title="快捷键 / Shortcuts: Alt+Shift+P">
+        <span><b>Alt+Shift+P</b></span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

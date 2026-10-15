@@ -1,0 +1,92 @@
+{
+  "manifest_version": 3,
+  "name": "Spotify Web Controller",
+  "short_name": "SpotifyCtrl",
+  "version": "1.1.0",
+  "description": "无需 Spotify Premium，在浏览器任何地方随时控制 Spotify 网页版（桌面置顶独立悬浮窗、网页拖拽悬浮球、封面歌名、快捷键）",
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Spotify 控制器",
+    "default_icon": {
+      "16": "icon16.png",
+      "32": "icon32.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "tabs",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://open.spotify.com/*",
+    "<all_urls>"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://open.spotify.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "exclude_matches": [
+        "https://open.spotify.com/*"
+      ],
+      "js": [
+        "floating_overlay.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "icon16.png",
+        "icon32.png",
+        "icon48.png",
+        "icon128.png",
+        "floating_overlay.css"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "commands": {
+    "play-pause": {
+      "suggested_key": {
+        "default": "Alt+Shift+P"
+      },
+      "description": "播放 / 暂停"
+    },
+    "next-track": {
+      "suggested_key": {
+        "default": "Alt+Shift+Right"
+      },
+      "description": "下一首"
+    },
+    "prev-track": {
+      "suggested_key": {
+        "default": "Alt+Shift+Left"
+      },
+      "description": "上一首"
+    }
+  }
+}

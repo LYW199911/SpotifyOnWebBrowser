@@ -1,0 +1,317 @@
+/* Spotify Web Controller - In-Page Floating Widget (Shadow DOM) */
+
+:host {
+  all: initial;
+  position: fixed;
+  z-index: 2147483647; /* Maximum z-index */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  user-select: none;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.widget-root {
+  position: fixed;
+  bottom: 80px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.6));
+}
+
+.widget-root.hidden {
+  display: none !important;
+}
+
+/* 1. Compact Pill / Capsule */
+.floating-pill {
+  display: flex;
+  align-items: center;
+  background: rgba(18, 18, 18, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 28px;
+  padding: 5px 10px 5px 6px;
+  gap: 8px;
+  cursor: grab;
+  color: #ffffff;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.floating-pill:hover {
+  background: rgba(28, 28, 28, 0.98);
+  border-color: rgba(29, 185, 84, 0.4);
+  transform: scale(1.03);
+}
+
+.floating-pill:active {
+  cursor: grabbing;
+}
+
+/* Disc / Cover */
+.disc-wrapper {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #242424;
+  border: 1.5px solid #1db954;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.disc-wrapper.playing {
+  animation: spin 10s linear infinite;
+}
+
+.disc-wrapper.paused {
+  animation: spin 10s linear infinite paused;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+.disc-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.disc-fallback-icon {
+  width: 18px;
+  height: 18px;
+  color: #1db954;
+}
+
+/* Info Marquee inside Pill */
+.pill-info {
+  display: flex;
+  flex-direction: column;
+  max-width: 130px;
+  overflow: hidden;
+  line-height: 1.2;
+}
+
+.pill-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pill-artist {
+  font-size: 9px;
+  color: #b3b3b3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Action buttons inside Pill */
+.pill-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pill-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #b3b3b3;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.pill-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.pill-btn.play-btn {
+  color: #1db954;
+}
+.pill-btn.play-btn:hover {
+  color: #1ed760;
+  background: rgba(29, 185, 84, 0.15);
+}
+
+/* 2. Expanded Card */
+.expanded-card {
+  width: 280px;
+  background: rgba(18, 18, 18, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: #ffffff;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: grab;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.card-header:active {
+  cursor: grabbing;
+}
+
+.card-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1db954;
+}
+
+.card-brand svg {
+  width: 16px;
+  height: 16px;
+}
+
+.card-close-btn {
+  background: transparent;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.card-close-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.card-track {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-cover {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #282828;
+  flex-shrink: 0;
+}
+
+.card-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-artist {
+  font-size: 11px;
+  color: #a7a7a7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.card-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.card-progress-fill {
+  height: 100%;
+  background: #1db954;
+  border-radius: 2px;
+  transition: width 0.1s linear;
+}
+
+.card-times {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: #727272;
+}
+
+.card-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.card-ctrl-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #b3b3b3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+.card-ctrl-btn:hover {
+  color: #ffffff;
+  transform: scale(1.1);
+}
+
+.card-play-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #1db954;
+  color: #000000;
+  box-shadow: 0 4px 10px rgba(29, 185, 84, 0.4);
+}
+.card-play-btn:hover {
+  background: #1ed760;
+  transform: scale(1.08);
+}
