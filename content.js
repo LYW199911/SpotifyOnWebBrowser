@@ -50,36 +50,43 @@
 
   // Inspect current player state
   function getPlayerState() {
-    const playPauseBtn = findEl([
-      'button[data-testid="control-button-playpause"]',
-      'button[data-testid="play-button"]',
-      'button[aria-label*="Play" i]',
-      'button[aria-label*="Pause" i]',
-      'button[aria-label*="播放"]',
-      'button[aria-label*="暂停"]',
-      'footer [data-testid="control-button-playpause"]',
-      'footer button[data-encore-id="buttonPrimary"]',
-    ]);
-
+    // 1. Accurately detect playback state strictly from footer playback bar
     let isPlaying = false;
-    if (playPauseBtn) {
-      const label = (playPauseBtn.getAttribute("aria-label") || "").toLowerCase();
-      if (label.includes("pause") || label.includes("暂停")) {
-        isPlaying = true;
-      } else if (label.includes("play") || label.includes("播放")) {
-        isPlaying = false;
-      } else {
-        // Fallback: check SVG icon or audio element
-        const path = playPauseBtn.querySelector("path");
-        const pathData = path ? path.getAttribute("d") || "" : "";
-        const hasPauseBars = pathData.includes("M5.7") || pathData.includes("M6") || !!playPauseBtn.querySelector("rect");
-        if (hasPauseBars) {
+
+    // Direct check: In Spotify Web, pause button exists in footer ONLY when actively playing
+    const footerPauseBtn = document.querySelector(
+      'footer [data-testid="control-button-pause"], [data-testid="player-controls"] [data-testid="control-button-pause"], [data-testid="control-button-pause"], footer button[aria-label*="Pause" i], footer button[aria-label*="暂停"]'
+    );
+    // Play button exists in footer ONLY when paused
+    const footerPlayBtn = document.querySelector(
+      'footer [data-testid="control-button-play"], [data-testid="player-controls"] [data-testid="control-button-play"], [data-testid="control-button-play"], footer button[aria-label*="Play" i], footer button[aria-label*="播放"]'
+    );
+
+    if (footerPauseBtn) {
+      isPlaying = true;
+    } else if (footerPlayBtn) {
+      isPlaying = false;
+    } else {
+      // Fallback: check primary button in footer
+      const primaryBtn = document.querySelector(
+        'footer [data-testid="player-controls"] button[data-encore-id="buttonPrimary"], footer button[data-encore-id="buttonPrimary"], footer [data-testid="control-button-playpause"]'
+      );
+      if (primaryBtn) {
+        const label = (primaryBtn.getAttribute("aria-label") || "").toLowerCase();
+        if (label.includes("pause") || label.includes("暂停")) {
           isPlaying = true;
+        } else if (label.includes("play") || label.includes("播放")) {
+          isPlaying = false;
         } else {
-          const audio = document.querySelector("audio");
-          if (audio && !audio.paused && audio.currentTime > 0) {
+          const hasPauseBars = !!primaryBtn.querySelector('path[d*="M5.7"], path[d*="M6"], rect');
+          if (hasPauseBars) {
             isPlaying = true;
           }
+        }
+      } else {
+        const audio = document.querySelector("audio");
+        if (audio && !audio.paused && audio.currentTime > 0) {
+          isPlaying = true;
         }
       }
     }
@@ -137,7 +144,7 @@
       'button[aria-label*="Repeat"]',
       'button[aria-label*="循环播放"]',
     ]);
-    const repeatState = repeatBtn ? repeatBtn.getAttribute("aria-checked") : "false"; // 'false', 'true', 'mixed'
+    const repeatState = repeatBtn ? repeatBtn.getAttribute("aria-checked") : "false";
 
     // Like / Add
     const likeBtn = findEl([
@@ -161,21 +168,62 @@
       if (audio) volume = Math.round(audio.volume * 100);
     }
 
+    // Determine Mute state accurately from volume bar & mute button
+    let isMuted = false;
     const muteBtn = findEl([
-      'button[data-testid="volume-bar-toggle-mute-button"]',
-      'button[aria-label*="Mute" i]',
-      'button[aria-label*="Unmute" i]',
-      'button[aria-label*="静音"]',
-      'button[aria-label*="取消静音"]',
-      '[data-testid="volume-bar"] button',
       'footer [data-testid="volume-bar-toggle-mute-button"]',
-      '.volume-bar button',
+      '[data-testid="volume-bar-toggle-mute-button"]',
+      '[data-testid="volume-bar"] button',
+      'footer .volume-bar button',
     ]);
-    const isMuted = muteBtn
-      ? (muteBtn.getAttribute("aria-label") || "").toLowerCase().includes("unmute") ||
-        (muteBtn.getAttribute("aria-label") || "").includes("取消静音") ||
-        (muteBtn.getAttribute("aria-label") || "").includes("恢复声音")
-      : false;
+
+    if (muteBtn) {
+      // 1. Button aria-label check
+      const btnLabel = (muteBtn.getAttribute("aria-label") || "").toLowerCase();
+      if (
+        btnLabel.includes("unmute") ||
+        btnLabel.includes("取消静音") ||
+        btnLabel.includes("恢复声音") ||
+        btnLabel.includes("开启声音")
+      ) {
+        isMuted = true;
+      }
+
+      // 2. SVG inside button: aria-label and path
+      const svg = muteBtn.querySelector("svg");
+      if (svg) {
+        const svgLabel = (svg.getAttribute("aria-label") || "").toLowerCase();
+        if (
+          svgLabel.includes("muted") ||
+          svgLabel.includes("off") ||
+          svgLabel.includes("已静音") ||
+          svgLabel.includes("取消静音")
+        ) {
+          isMuted = true;
+        }
+
+        // Spotify's muted icon draws an 'X' (cross): path contains M13.86 or 1.5-1.5
+        const path = svg.querySelector("path");
+        const pathData = path ? path.getAttribute("d") || "" : "";
+        if (pathData.includes("M13.86") || pathData.includes("1.5-1.5") || pathData.includes("1.5 1.5")) {
+          isMuted = true;
+        }
+      }
+    }
+
+    // 3. Volume slider at 0
+    if (volumeSlider) {
+      const val = parseFloat(volumeSlider.value);
+      if (val === 0 || volumeSlider.getAttribute("aria-valuenow") === "0") {
+        isMuted = true;
+      }
+    }
+
+    // 4. HTML audio element muted or volume 0
+    const audio = document.querySelector("audio");
+    if (audio && (audio.muted || audio.volume === 0)) {
+      isMuted = true;
+    }
 
     return {
       success: true,
@@ -270,15 +318,14 @@
     switch (command) {
       case "PLAY_PAUSE": {
         const btn = findEl([
-          'button[data-testid="control-button-playpause"]',
-          'button[data-testid="play-button"]',
-          'button[aria-label*="Play" i]',
-          'button[aria-label*="Pause" i]',
-          'button[aria-label*="播放"]',
-          'button[aria-label*="暂停"]',
-          'footer [data-testid="control-button-playpause"]',
+          'footer [data-testid="control-button-pause"]',
+          'footer [data-testid="control-button-play"]',
+          '[data-testid="player-controls"] [data-testid="control-button-pause"]',
+          '[data-testid="player-controls"] [data-testid="control-button-play"]',
           'footer button[data-encore-id="buttonPrimary"]',
           '[data-testid="player-controls"] button:nth-child(3)',
+          'footer [data-testid="control-button-playpause"]',
+          'button[data-testid="control-button-playpause"]',
         ]);
         if (btn) {
           btn.click();

@@ -482,7 +482,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const isPlaying = playIcon.classList.contains("hidden");
     const nextState = !isPlaying;
     updatePlayPauseIcons(nextState);
-    optimisticPlayUntil = Date.now() + 800;
+    optimisticPlayUntil = Date.now() + 1500;
     sendCommand("PLAY_PAUSE");
   }
 
@@ -490,7 +490,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const isMuted = volHighIcon.classList.contains("hidden");
     const nextState = !isMuted;
     updateMuteIcons(nextState);
-    optimisticMuteUntil = Date.now() + 800;
+    optimisticMuteUntil = Date.now() + 1500;
     sendCommand("TOGGLE_MUTE");
   }
 
