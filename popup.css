@@ -606,6 +606,7 @@ input:checked + .slider:before {
 body.detached {
   width: 100vw;
   height: 100vh;
+  min-width: 280px;
   border-radius: 0;
   overflow-y: auto;
   overflow-x: hidden;
@@ -626,6 +627,7 @@ body.detached .player-container {
   gap: 10px;
   background: transparent;
   padding: 0;
+  box-sizing: border-box;
 }
 
 .mini-strip-left {
@@ -744,10 +746,23 @@ body.detached .player-container {
 }
 
 /* 1. Explicit Mini Mode */
-body.mini-mode,
+body.mini-mode {
+  width: 320px !important;
+  min-width: 320px !important;
+  height: 56px !important;
+  min-height: 56px !important;
+  max-height: 56px !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: var(--radius-md);
+  background: var(--bg-main) !important;
+}
+
 body.detached.mini-mode {
   width: 100vw !important;
   height: 100vh !important;
+  min-width: 0 !important;
   min-height: 0 !important;
   max-height: 100vh !important;
   overflow: hidden !important;
@@ -755,6 +770,7 @@ body.detached.mini-mode {
   overflow-y: hidden !important;
   margin: 0 !important;
   padding: 0 !important;
+  border-radius: 0 !important;
   background: var(--bg-main) !important;
 }
 

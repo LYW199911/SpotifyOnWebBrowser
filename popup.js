@@ -174,6 +174,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Distinguish Detached Window vs Standard Toolbar Popup
+  const isDetachedWindow = window.location.search.includes("detached=true");
+
   // Load preferences
   chrome.storage.local.get(["userLanguage", "autoMuteAds", "enableInPageFloating", "isMiniMode"], (res) => {
     const lang = res.userLanguage || "zh-CN";
@@ -182,8 +185,18 @@ document.addEventListener("DOMContentLoaded", () => {
     chkAutoMute.checked = !!res.autoMuteAds;
     chkFloatingWidget.checked = res.enableInPageFloating !== false;
 
-    if (res.isMiniMode) {
-      setMiniMode(true);
+    if (isDetachedWindow) {
+      document.body.classList.add("detached");
+      if (btnPopout) btnPopout.style.display = "none";
+      if (btnToggleMini) btnToggleMini.style.display = "flex";
+      if (res.isMiniMode) {
+        setMiniMode(true);
+      }
+    } else {
+      // Toolbar Action Popup: ALWAYS normal full player card, never collapse
+      document.body.classList.remove("mini-mode", "detached");
+      if (btnToggleMini) btnToggleMini.style.display = "none";
+      if (btnPopout) btnPopout.style.display = "flex";
     }
   });
 
@@ -508,11 +521,7 @@ document.addEventListener("DOMContentLoaded", () => {
     sendCommand("SET_VOLUME", { volume: val });
   });
 
-  // Handle detached mode
-  if (window.location.search.includes("detached=true")) {
-    document.body.classList.add("detached");
-    if (btnPopout) btnPopout.style.display = "none";
-  }
+  // Volume slider events change
 
   // Lock window height in mini mode to prevent free resizing / distortion
   let resizeTimeout = null;
