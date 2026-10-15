@@ -103,11 +103,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === "OPEN_DETACHED_WINDOW") {
+    const popUrl = chrome.runtime.getURL("popup.html?detached=true");
     chrome.windows.create(
       {
-        url: "popup.html?detached=true",
+        url: popUrl,
         type: "popup",
-        width: 350,
+        width: 340,
         height: 520,
         focused: true,
       },

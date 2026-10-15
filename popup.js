@@ -282,42 +282,34 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
-  // Pop-out Window (Desktop Always-On-Top / Independent Mini Window)
-  btnPopout.addEventListener("click", async () => {
-    // If Document Picture-in-Picture is supported by Chromium (Edge/Chrome 116+)
-    if ("documentPictureInPicture" in window && window.documentPictureInPicture.requestWindow) {
-      try {
-        const pipWindow = await window.documentPictureInPicture.requestWindow({
-          width: 330,
-          height: 480,
+  // Pop-out Window (Desktop Independent Floating Window)
+  if (btnPopout) {
+    btnPopout.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const popUrl = chrome.runtime.getURL("popup.html?detached=true");
+
+      if (chrome.windows && chrome.windows.create) {
+        chrome.windows.create(
+          {
+            url: popUrl,
+            type: "popup",
+            width: 340,
+            height: 520,
+            focused: true,
+          },
+          () => {
+            window.close();
+          }
+        );
+      } else {
+        chrome.runtime.sendMessage({ action: "OPEN_DETACHED_WINDOW" }, () => {
+          window.close();
         });
-
-        // Copy styles to PiP window
-        document.querySelectorAll("link[rel='stylesheet'], style").forEach((styleEl) => {
-          pipWindow.document.head.appendChild(styleEl.cloneNode(true));
-        });
-
-        // Clone player container into PiP window
-        const clone = document.querySelector(".player-container").cloneNode(true);
-        pipWindow.document.body.appendChild(clone);
-        pipWindow.document.body.style.margin = "0";
-        pipWindow.document.body.style.backgroundColor = "#121212";
-
-        // Inject PiP script to keep events synced
-        const s = pipWindow.document.createElement("script");
-        s.src = "popup.js";
-        pipWindow.document.body.appendChild(s);
-        return;
-      } catch (err) {
-        console.warn("PiP request failed, falling back to detached window:", err);
       }
-    }
-
-    // Detached popup window fallback
-    chrome.runtime.sendMessage({ action: "OPEN_DETACHED_WINDOW" }, () => {
-      window.close();
     });
-  });
+  }
 
   // Open & Focus Tab actions
   btnOpenSpotify.addEventListener("click", () => {
