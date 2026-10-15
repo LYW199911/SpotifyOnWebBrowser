@@ -161,12 +161,12 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.classList.toggle("mini-mode", mini);
     chrome.storage.local.set({ isMiniMode: mini });
 
-    // If running in detached popup window, resize the window frame automatically
+    // If running in detached popup window, lock to exact fixed dimensions
     if (window.location.search.includes("detached=true") && chrome.windows && chrome.windows.getCurrent) {
       chrome.windows.getCurrent((win) => {
         if (!win) return;
         if (mini) {
-          chrome.windows.update(win.id, { width: 310, height: 96 });
+          chrome.windows.update(win.id, { width: 320, height: 92 });
         } else {
           chrome.windows.update(win.id, { width: 340, height: 530 });
         }
@@ -513,6 +513,24 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.classList.add("detached");
     if (btnPopout) btnPopout.style.display = "none";
   }
+
+  // Lock window height in mini mode to prevent free resizing / distortion
+  let resizeTimeout = null;
+  window.addEventListener("resize", () => {
+    if (isMiniMode && window.location.search.includes("detached=true")) {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        if (chrome.windows && chrome.windows.getCurrent) {
+          chrome.windows.getCurrent((win) => {
+            if (!win) return;
+            if (win.height !== 92 || win.width !== 320) {
+              chrome.windows.update(win.id, { width: 320, height: 92 });
+            }
+          });
+        }
+      }, 150);
+    }
+  });
 
   // Initial load & Polling loop
   refreshState();

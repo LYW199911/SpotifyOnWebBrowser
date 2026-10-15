@@ -605,7 +605,6 @@ input:checked + .slider:before {
 /* Detached Window Mode */
 body.detached {
   width: 100vw;
-  min-width: 260px;
   height: 100vh;
   border-radius: 0;
   overflow-y: auto;
@@ -620,15 +619,13 @@ body.detached .player-container {
    Mini Player Strip (Ultra-compact: Play/Next/Mute only)
    ========================================================= */
 .mini-player-strip {
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  gap: 8px;
-  padding: 4px 6px;
-  border-radius: var(--radius-md);
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
+  gap: 10px;
+  background: transparent;
+  padding: 0;
 }
 
 .mini-strip-left {
@@ -640,8 +637,8 @@ body.detached .player-container {
 }
 
 .mini-cover-wrapper {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: var(--radius-sm);
   overflow: hidden;
   background: var(--bg-elevated);
@@ -649,6 +646,7 @@ body.detached .player-container {
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 .mini-cover-image {
@@ -674,7 +672,7 @@ body.detached .player-container {
 }
 
 .mini-title {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--text-base);
   white-space: nowrap;
@@ -683,7 +681,7 @@ body.detached .player-container {
 }
 
 .mini-artist {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-sub);
   white-space: nowrap;
   overflow: hidden;
@@ -694,7 +692,7 @@ body.detached .player-container {
 .mini-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
@@ -723,8 +721,8 @@ body.detached .player-container {
 }
 
 .mini-btn-play {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   background: var(--spotify-green);
   color: #000000;
   box-shadow: 0 2px 8px rgba(29, 185, 84, 0.4);
@@ -737,42 +735,95 @@ body.detached .player-container {
 }
 
 .mini-btn-restore {
+  width: 24px;
+  height: 24px;
   color: var(--text-muted);
 }
 .mini-btn-restore:hover {
   color: var(--spotify-green);
 }
 
-/* When mini-mode is active or height is very small (< 220px) */
+/* 1. Explicit Mini Mode */
 body.mini-mode,
-@media (max-height: 220px) {
-  body {
-    overflow: hidden !important;
-  }
+body.detached.mini-mode {
+  width: 100vw !important;
+  height: 100vh !important;
+  min-height: 0 !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: var(--bg-main) !important;
+}
 
+body.mini-mode::-webkit-scrollbar,
+body.detached.mini-mode::-webkit-scrollbar,
+body.mini-mode *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+body.mini-mode .header {
+  display: none !important;
+}
+
+body.mini-mode #full-player-content {
+  display: none !important;
+}
+
+body.mini-mode #no-tab-view {
+  display: none !important;
+}
+
+body.mini-mode #mini-player-strip {
+  display: flex !important;
+}
+
+body.mini-mode .player-container,
+body.detached.mini-mode .player-container {
+  padding: 0 10px !important;
+  margin: 0 !important;
+  height: 100vh !important;
+  min-height: 0 !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+}
+
+/* 2. Responsive Fallback when window height < 200px */
+@media (max-height: 200px) {
+  body,
+  body.detached {
+    overflow: hidden !important;
+    overflow-y: hidden !important;
+  }
+  body::-webkit-scrollbar,
+  body *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
   .header {
     display: none !important;
   }
-
   #full-player-content {
     display: none !important;
   }
-
   #mini-player-strip {
     display: flex !important;
   }
-
-  .player-container {
-    padding: 6px 8px !important;
-    gap: 0 !important;
+  .player-container,
+  body.detached .player-container {
+    padding: 0 10px !important;
     height: 100vh !important;
+    min-height: 0 !important;
     justify-content: center !important;
-  }
-
-  .mini-player-strip {
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
+    overflow: hidden !important;
   }
 }
 
