@@ -12,8 +12,10 @@
 
 1. **双重全局悬浮控制 (Dual Floating Control)**：
    - 🖥️ **桌面级置顶独立悬浮窗 (Always-On-Top PiP Window)**：
-     - 支持 Chromium 画中画 (Document PiP) 及独立无边框置顶小窗。
-     - 切换到 VSCode、游戏、办公软件等任意窗口，播放器始终悬浮在桌面边缘，点击其他地方不会关闭！
+     - 支持无边框独立置顶小窗，切换到 VSCode、游戏、办公软件等任意窗口，播放器始终悬浮在桌面边缘，点击其他地方不会关闭！
+     - 🎛️ **双形态窗口模式（正常模式 & 极致迷你模式）**：
+       - **正常模式**：显示完整封面、进度条、全功能播放控制与音量条。
+       - **迷你模式**：专为小尺寸设计，超窄横条仅保留用户最核心的 **播放/暂停、下一首、静音** 3 个按钮及歌名，窗口可缩至超小尺寸（~300x90px），杜绝任何内容遮挡！
    - 🌐 **网页内拖拽悬浮音乐胶囊 (In-Page Floating Widget)**：
      - 在浏览任意网页时，页面右下角显示小巧的音乐悬浮球/胶囊。
      - 实时旋转唱片封面、歌名滚动显示、快捷切歌；可自由拖拽放置在页面任意位置并自动记忆位置。
@@ -60,9 +62,11 @@ A premium browser extension designed for **Microsoft Edge** and **Google Chrome*
 ### 🌟 Key Features
 
 1. **Dual Floating Modes**:
-   - 🖥️ **Desktop Always-On-Top PiP Window**:
-     - Uses Chromium Document Picture-in-Picture & detached popup window.
-     - Floats above all desktop apps (IDE, games, documents) without auto-closing when clicking outside!
+   - 🖥️ **Desktop Always-On-Top Window**:
+     - Detached standalone window that stays on top across all apps (IDE, games, desktop).
+     - 🎛️ **Dual Window Modes (Normal & Ultra-Mini)**:
+       - **Normal Mode**: Full layout with large album art, interactive seek bar, volume slider, and toggles.
+       - **Mini Mode**: Ultra-compact strip containing only the essential **Play/Pause, Next Track, Mute** buttons + track info, shrinking down to ~300x90px with zero clipping!
    - 🌐 **In-Page Draggable Floating Widget**:
      - Floating music pill widget injected onto web pages with vinyl disc animation.
      - Fully draggable with position memory.

@@ -1,4 +1,4 @@
-// Spotify Web Controller - Popup & Player Logic with i18n & Desktop Pop-out
+// Spotify Web Controller - Popup & Player Logic with i18n, Desktop Pop-out & Mini Mode
 
 // Internationalization Dictionaries
 const I18N = {
@@ -8,6 +8,8 @@ const I18N = {
     statusOnline: "已连接",
     statusOffline: "未连接",
     statusConnecting: "检测中",
+    btnMiniMode: "切换迷你模式 (播放/下一首/静音)",
+    btnNormalMode: "切换完整模式",
     btnPopout: "桌面置顶/独立悬浮窗",
     btnFocus: "跳转至 Spotify 网页",
     emptyTitle: "未检测到 Spotify 网页",
@@ -33,6 +35,8 @@ const I18N = {
     statusOnline: "Connected",
     statusOffline: "Offline",
     statusConnecting: "Connecting...",
+    btnMiniMode: "Switch to Mini Mode (Play/Next/Mute)",
+    btnNormalMode: "Switch to Full Mode",
     btnPopout: "Desktop Always-On-Top Window",
     btnFocus: "Focus Spotify Tab",
     emptyTitle: "No Spotify Tab Found",
@@ -55,13 +59,15 @@ const I18N = {
 };
 
 let currentLang = "zh-CN";
+let isMiniMode = false;
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Elements
+  // Header Elements
   const btnLang = document.getElementById("btn-lang");
   const langText = document.getElementById("lang-text");
   const statusPill = document.getElementById("status-pill");
   const statusText = document.getElementById("status-text");
+  const btnToggleMini = document.getElementById("btn-toggle-mini");
   const btnPopout = document.getElementById("btn-popout");
   const btnFocusTab = document.getElementById("btn-focus-tab");
   const btnOpenSpotify = document.getElementById("btn-open-spotify");
@@ -69,6 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const noTabView = document.getElementById("no-tab-view");
   const playerView = document.getElementById("player-view");
 
+  // Full Layout Elements
   const coverArt = document.getElementById("cover-art");
   const coverFallback = document.getElementById("cover-fallback");
   const adBadge = document.getElementById("ad-badge");
@@ -100,6 +107,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const chkAutoMute = document.getElementById("chk-auto-mute");
   const chkFloatingWidget = document.getElementById("chk-floating-widget");
 
+  // Mini Layout Elements (3 essential buttons: Play/Next/Mute)
+  const miniCoverArt = document.getElementById("mini-cover-art");
+  const miniCoverFallback = document.getElementById("mini-cover-fallback");
+  const miniTrackTitle = document.getElementById("mini-track-title");
+  const miniTrackArtist = document.getElementById("mini-track-artist");
+  const miniBtnPlayPause = document.getElementById("mini-btn-play-pause");
+  const miniPlayIcon = document.getElementById("mini-play-icon");
+  const miniPauseIcon = document.getElementById("mini-pause-icon");
+  const miniBtnNext = document.getElementById("mini-btn-next");
+  const miniBtnMute = document.getElementById("mini-btn-mute");
+  const miniVolHigh = document.getElementById("mini-vol-high");
+  const miniVolMute = document.getElementById("mini-vol-mute");
+  const miniBtnRestore = document.getElementById("mini-btn-restore");
+
   // Interaction flags
   let isSeeking = false;
   let isVolumeDragging = false;
@@ -127,7 +148,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // Update dynamic state texts
     if (lastKnownState) {
       renderPlayerState(lastKnownState);
     } else {
@@ -135,21 +155,52 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Load language and preferences
-  chrome.storage.local.get(["userLanguage", "autoMuteAds", "enableInPageFloating"], (res) => {
+  // Mini / Normal Mode Switcher
+  function setMiniMode(mini) {
+    isMiniMode = mini;
+    document.body.classList.toggle("mini-mode", mini);
+    chrome.storage.local.set({ isMiniMode: mini });
+
+    // If running in detached popup window, resize the window frame automatically
+    if (window.location.search.includes("detached=true") && chrome.windows && chrome.windows.getCurrent) {
+      chrome.windows.getCurrent((win) => {
+        if (!win) return;
+        if (mini) {
+          chrome.windows.update(win.id, { width: 310, height: 96 });
+        } else {
+          chrome.windows.update(win.id, { width: 340, height: 530 });
+        }
+      });
+    }
+  }
+
+  // Load preferences
+  chrome.storage.local.get(["userLanguage", "autoMuteAds", "enableInPageFloating", "isMiniMode"], (res) => {
     const lang = res.userLanguage || "zh-CN";
     applyLanguage(lang);
 
     chkAutoMute.checked = !!res.autoMuteAds;
-    chkFloatingWidget.checked = res.enableInPageFloating !== false; // Default true
+    chkFloatingWidget.checked = res.enableInPageFloating !== false;
+
+    if (res.isMiniMode) {
+      setMiniMode(true);
+    }
   });
 
-  // Language toggle click
+  // Language switch
   btnLang.addEventListener("click", () => {
     const nextLang = currentLang === "zh-CN" ? "en-US" : "zh-CN";
     applyLanguage(nextLang);
     chrome.storage.local.set({ userLanguage: nextLang });
   });
+
+  // Mini mode toggle
+  if (btnToggleMini) {
+    btnToggleMini.addEventListener("click", () => setMiniMode(true));
+  }
+  if (miniBtnRestore) {
+    miniBtnRestore.addEventListener("click", () => setMiniMode(false));
+  }
 
   // Auto-mute toggle
   chkAutoMute.addEventListener("change", () => {
@@ -180,6 +231,9 @@ document.addEventListener("DOMContentLoaded", () => {
     statusText.innerText = dict.statusOffline;
     noTabView.classList.remove("hidden");
     playerView.classList.add("hidden");
+
+    if (miniTrackTitle) miniTrackTitle.innerText = dict.notPlaying;
+    if (miniTrackArtist) miniTrackArtist.innerText = "Spotify";
   }
 
   // Render player state to UI
@@ -193,19 +247,40 @@ document.addEventListener("DOMContentLoaded", () => {
     playerView.classList.remove("hidden");
 
     // Track Title & Artist
-    trackTitle.innerText = state.title || dict.notPlaying;
-    trackTitle.title = state.title || "";
-    trackArtist.innerText = state.artist || dict.playToStart;
-    trackArtist.title = state.artist || "";
+    const title = state.title || dict.notPlaying;
+    const artist = state.artist || dict.playToStart;
+
+    trackTitle.innerText = title;
+    trackTitle.title = title;
+    trackArtist.innerText = artist;
+    trackArtist.title = artist;
+
+    if (miniTrackTitle) {
+      miniTrackTitle.innerText = title;
+      miniTrackTitle.title = title;
+    }
+    if (miniTrackArtist) {
+      miniTrackArtist.innerText = artist;
+      miniTrackArtist.title = artist;
+    }
 
     // Cover Art
     if (state.coverUrl) {
       coverArt.src = state.coverUrl;
       coverArt.classList.remove("hidden");
       coverFallback.classList.add("hidden");
+
+      if (miniCoverArt) {
+        miniCoverArt.src = state.coverUrl;
+        miniCoverArt.classList.remove("hidden");
+      }
+      if (miniCoverFallback) miniCoverFallback.classList.add("hidden");
     } else {
       coverArt.classList.add("hidden");
       coverFallback.classList.remove("hidden");
+
+      if (miniCoverArt) miniCoverArt.classList.add("hidden");
+      if (miniCoverFallback) miniCoverFallback.classList.remove("hidden");
     }
 
     // Ad indicator
@@ -215,13 +290,19 @@ document.addEventListener("DOMContentLoaded", () => {
       adBadge.classList.add("hidden");
     }
 
-    // Play/Pause icon
+    // Play/Pause icon (both full and mini views)
     if (state.isPlaying) {
       playIcon.classList.add("hidden");
       pauseIcon.classList.remove("hidden");
+
+      if (miniPlayIcon) miniPlayIcon.classList.add("hidden");
+      if (miniPauseIcon) miniPauseIcon.classList.remove("hidden");
     } else {
       playIcon.classList.remove("hidden");
       pauseIcon.classList.add("hidden");
+
+      if (miniPlayIcon) miniPlayIcon.classList.remove("hidden");
+      if (miniPauseIcon) miniPauseIcon.classList.add("hidden");
     }
 
     // Shuffle & Repeat
@@ -260,13 +341,19 @@ document.addEventListener("DOMContentLoaded", () => {
       volumePercent.innerText = `${state.volume}%`;
     }
 
-    // Mute state
+    // Mute state (both full and mini views)
     if (state.isMuted) {
       volHighIcon.classList.add("hidden");
       volMuteIcon.classList.remove("hidden");
+
+      if (miniVolHigh) miniVolHigh.classList.add("hidden");
+      if (miniVolMute) miniVolMute.classList.remove("hidden");
     } else {
       volHighIcon.classList.remove("hidden");
       volMuteIcon.classList.add("hidden");
+
+      if (miniVolHigh) miniVolHigh.classList.remove("hidden");
+      if (miniVolMute) miniVolMute.classList.add("hidden");
     }
   }
 
@@ -324,7 +411,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Playback control buttons
+  // Playback control buttons (Full layout)
   btnPlayPause.addEventListener("click", () => {
     const isPlaying = playIcon.classList.contains("hidden");
     if (isPlaying) {
@@ -352,6 +439,35 @@ document.addEventListener("DOMContentLoaded", () => {
     volMuteIcon.classList.toggle("hidden");
     sendCommand("TOGGLE_MUTE");
   });
+
+  // Mini layout essential buttons (Play/Pause, Next Track, Mute)
+  if (miniBtnPlayPause) {
+    miniBtnPlayPause.addEventListener("click", () => {
+      const isPlaying = miniPlayIcon && miniPlayIcon.classList.contains("hidden");
+      if (isPlaying) {
+        if (miniPlayIcon) miniPlayIcon.classList.remove("hidden");
+        if (miniPauseIcon) miniPauseIcon.classList.add("hidden");
+      } else {
+        if (miniPlayIcon) miniPlayIcon.classList.add("hidden");
+        if (miniPauseIcon) miniPauseIcon.classList.remove("hidden");
+      }
+      sendCommand("PLAY_PAUSE");
+    });
+  }
+
+  if (miniBtnNext) {
+    miniBtnNext.addEventListener("click", () => sendCommand("NEXT_TRACK"));
+  }
+
+  if (miniBtnMute) {
+    miniBtnMute.addEventListener("click", () => {
+      if (miniVolHigh && miniVolMute) {
+        miniVolHigh.classList.toggle("hidden");
+        miniVolMute.classList.toggle("hidden");
+      }
+      sendCommand("TOGGLE_MUTE");
+    });
+  }
 
   // Seek bar events
   seekSlider.addEventListener("mousedown", () => {
@@ -392,8 +508,9 @@ document.addEventListener("DOMContentLoaded", () => {
     sendCommand("SET_VOLUME", { volume: val });
   });
 
-  // If running in detached mode, hide the popout button to avoid duplicate popouts
+  // Handle detached mode
   if (window.location.search.includes("detached=true")) {
+    document.body.classList.add("detached");
     if (btnPopout) btnPopout.style.display = "none";
   }
 
