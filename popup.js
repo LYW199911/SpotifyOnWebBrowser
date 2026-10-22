@@ -5,6 +5,7 @@ const I18N = {
   "zh-CN": {
     langBtn: "中 / EN",
     brandTitle: "Spotify 控制器",
+    brandSub: "控制器",
     statusOnline: "已连接",
     statusOffline: "未连接",
     statusConnecting: "检测中",
@@ -33,6 +34,7 @@ const I18N = {
   "en-US": {
     langBtn: "EN / 中",
     brandTitle: "Spotify Controller",
+    brandSub: "Controller",
     statusOnline: "Connected",
     statusOffline: "Offline",
     statusConnecting: "Connecting...",
@@ -155,7 +157,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (lastKnownState) {
       renderPlayerState(lastKnownState);
     } else {
-      statusText.innerText = dict.statusConnecting;
+      if (statusText) statusText.innerText = dict.statusConnecting;
+      if (statusPill) statusPill.title = dict.statusConnecting;
     }
   }
 
@@ -282,7 +285,8 @@ document.addEventListener("DOMContentLoaded", () => {
     lastKnownState = null;
     const dict = I18N[currentLang] || I18N["zh-CN"];
     statusPill.className = "status-pill offline";
-    statusText.innerText = dict.statusOffline;
+    if (statusText) statusText.innerText = dict.statusOffline;
+    statusPill.title = dict.statusOffline;
     noTabView.classList.remove("hidden");
     playerView.classList.add("hidden");
 
@@ -328,7 +332,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const dict = I18N[currentLang] || I18N["zh-CN"];
 
     statusPill.className = "status-pill online";
-    statusText.innerText = dict.statusOnline;
+    if (statusText) statusText.innerText = dict.statusOnline;
+    statusPill.title = dict.statusOnline;
     noTabView.classList.add("hidden");
     playerView.classList.remove("hidden");
 

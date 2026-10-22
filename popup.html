@@ -14,7 +14,10 @@
         <svg class="spotify-logo" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.627.627 0 0 1-.86.208c-2.355-1.439-5.32-1.764-8.814-.966a.627.627 0 1 1-.28-1.222c3.824-.875 7.098-.507 9.746 1.118a.627.627 0 0 1 .208.862zm1.225-2.723a.784.784 0 0 1-1.077.26c-2.696-1.657-6.805-2.136-9.993-1.168a.784.784 0 1 1-.462-1.498c3.64-1.104 8.18-.574 11.272 1.329a.785.785 0 0 1 .26 1.077zm.106-2.836C14.689 8.94 9.362 8.766 6.273 9.704a.942.942 0 1 1-.55-1.802c3.543-1.076 9.426-.874 13.23 1.385a.942.942 0 0 1-.995 1.578z"/>
         </svg>
-        <span class="brand-title" data-i18n="brandTitle">Spotify 控制器</span>
+        <span class="brand-title">
+          <span class="brand-prefix">Spotify</span>
+          <span class="brand-sub" id="brand-sub" data-i18n="brandSub">控制器</span>
+        </span>
       </div>
 
       <div class="header-actions">
@@ -33,10 +36,10 @@
           <span id="lang-text">中 / EN</span>
         </button>
 
-        <!-- Status -->
-        <div id="status-pill" class="status-pill offline" title="连接状态">
+        <!-- Status Dot Indicator (fixed size) -->
+        <div id="status-pill" class="status-pill offline" title="未连接">
           <span class="status-dot"></span>
-          <span id="status-text" data-i18n="statusConnecting">检测中</span>
+          <span id="status-text" class="status-text" data-i18n="statusConnecting">检测中</span>
         </div>
 
         <!-- Desktop PiP / Pop-out Window -->
