@@ -170,7 +170,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (pipWindow) {
       pipWindow.document.body.classList.toggle("mini-mode", mini);
       try {
-        pipWindow.resizeTo(mini ? 320 : 350, mini ? 92 : 530);
+        pipWindow.resizeTo(mini ? 320 : 350, mini ? 92 : 460);
       } catch (e) {}
     }
     chrome.storage.local.set({ isMiniMode: mini });
@@ -182,7 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (mini) {
           chrome.windows.update(win.id, { width: 320, height: 92 });
         } else {
-          chrome.windows.update(win.id, { width: 350, height: 530 });
+          chrome.windows.update(win.id, { width: 350, height: 460 });
         }
       });
     }
@@ -449,7 +449,7 @@ document.addEventListener("DOMContentLoaded", () => {
             url: popUrl,
             type: "popup",
             width: 350,
-            height: 520,
+            height: 460,
             focused: true,
           },
           () => {
@@ -556,7 +556,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const w = isMiniMode ? 320 : 350;
-      const h = isMiniMode ? 92 : 530;
+      const h = isMiniMode ? 92 : 420;
       pipWindow = await window.documentPictureInPicture.requestWindow({
         width: w,
         height: h,

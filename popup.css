@@ -39,6 +39,9 @@ body:not(.detached) {
   width: 350px !important;
   min-width: 350px !important;
   max-width: 350px !important;
+  height: 420px !important;
+  min-height: 420px !important;
+  max-height: 420px !important;
   border-radius: var(--radius-lg);
 }
 
@@ -47,7 +50,7 @@ body:not(.detached) .header {
 }
 
 body:not(.detached) #full-player-content {
-  display: block !important;
+  display: flex !important;
 }
 
 body:not(.detached) #mini-player-strip {
@@ -57,7 +60,10 @@ body:not(.detached) #mini-player-strip {
 .player-container {
   display: flex;
   flex-direction: column;
-  padding: 14px 14px 16px;
+  justify-content: space-between;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 14px 14px 14px;
   gap: 12px;
 }
 
@@ -258,7 +264,17 @@ button:active {
 .view-panel {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  flex: 1;
+  min-height: 0;
+  gap: 12px;
+}
+
+.full-player-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  gap: 12px;
 }
 
 .hidden {
@@ -266,11 +282,21 @@ button:active {
 }
 
 /* Empty / No Tab View */
+#no-tab-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   text-align: center;
+  flex: 1;
+  box-sizing: border-box;
   padding: 24px 12px;
   background: var(--bg-card);
   border: 1px dashed var(--border-color);
@@ -836,6 +862,11 @@ body.detached.mini-mode #full-player-content {
 
 body.mini-mode #no-tab-view,
 body.detached.mini-mode #no-tab-view {
+  display: none !important;
+}
+
+body.mini-mode .footer,
+body.detached.mini-mode .footer {
   display: none !important;
 }
 
