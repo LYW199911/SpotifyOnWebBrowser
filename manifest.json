@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Spotify Web Controller",
   "short_name": "SpotifyCtrl",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "无需 Spotify Premium，在浏览器任何地方随时控制 Spotify 网页版（桌面置顶独立悬浮窗、网页拖拽悬浮球、封面歌名、快捷键）",
   "icons": {
     "16": "icon16.png",
