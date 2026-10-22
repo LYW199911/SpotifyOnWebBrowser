@@ -27,8 +27,8 @@
 }
 
 body {
-  width: 330px;
-  min-width: 330px;
+  width: 350px;
+  min-width: 350px;
   background-color: var(--bg-main);
   color: var(--text-base);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -36,10 +36,9 @@ body {
 }
 
 body:not(.detached) {
-  width: 330px !important;
-  min-width: 330px !important;
-  max-width: 330px !important;
-  min-height: 480px !important;
+  width: 350px !important;
+  min-width: 350px !important;
+  max-width: 350px !important;
   border-radius: var(--radius-lg);
 }
 
@@ -58,8 +57,8 @@ body:not(.detached) #mini-player-strip {
 .player-container {
   display: flex;
   flex-direction: column;
-  padding: 16px;
-  gap: 14px;
+  padding: 14px 14px 16px;
+  gap: 12px;
 }
 
 /* Header */
@@ -67,18 +66,22 @@ body:not(.detached) #mini-player-strip {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 4px;
+  padding-bottom: 2px;
+  gap: 6px;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .spotify-logo {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
   color: var(--spotify-green);
   filter: drop-shadow(0 0 6px rgba(29, 185, 84, 0.4));
 }
@@ -86,26 +89,32 @@ body:not(.detached) #mini-player-strip {
 .brand-title {
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
   color: var(--text-base);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .lang-btn {
   font-size: 10px;
   font-weight: 600;
-  padding: 3px 6px;
+  padding: 3px 5px;
   border-radius: 12px;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   color: var(--text-sub);
   cursor: pointer;
   letter-spacing: 0.3px;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: all 0.2s ease;
 }
 
@@ -119,20 +128,27 @@ body:not(.detached) #mini-player-strip {
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 3px 8px;
+  padding: 3px 7px;
   border-radius: 20px;
   font-size: 11px;
   font-weight: 500;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   color: var(--text-sub);
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: all 0.2s ease;
+}
+
+.status-pill span {
+  white-space: nowrap;
 }
 
 .status-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
+  flex-shrink: 0;
   background: var(--text-muted);
 }
 

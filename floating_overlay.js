@@ -116,7 +116,14 @@
       </div>
 
       <div class="card-track">
-        <img id="card-cover" class="card-cover" src="" />
+        <div class="card-cover-wrapper">
+          <img id="card-cover" class="card-cover" src="" style="display:none;" />
+          <div id="card-cover-fallback" class="card-cover-fallback">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="#727272">
+              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+            </svg>
+          </div>
+        </div>
         <div class="card-details">
           <div id="card-title" class="card-title">未在播放</div>
           <div id="card-artist" class="card-artist">Spotify 网页版</div>
@@ -178,6 +185,7 @@
   const cardBrandText = shadow.getElementById("card-brand-text");
   const cardBtnClose = shadow.getElementById("card-btn-close");
   const cardCover = shadow.getElementById("card-cover");
+  const cardCoverFallback = shadow.getElementById("card-cover-fallback");
   const cardTitle = shadow.getElementById("card-title");
   const cardArtist = shadow.getElementById("card-artist");
   const cardProgressBar = shadow.getElementById("card-progress-bar");
@@ -310,9 +318,14 @@
       pillCover.style.display = "block";
       pillLogo.style.display = "none";
       cardCover.src = state.coverUrl;
+      cardCover.style.display = "block";
+      if (cardCoverFallback) cardCoverFallback.style.display = "none";
     } else {
       pillCover.style.display = "none";
       pillLogo.style.display = "block";
+      cardCover.src = "";
+      cardCover.style.display = "none";
+      if (cardCoverFallback) cardCoverFallback.style.display = "flex";
     }
 
     // Play / Pause disc animation and icons (honor optimistic click for 1500ms)
